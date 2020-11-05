@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:kingfresh/widgets/buttons.dart';
 
 class AccountPage extends StatefulWidget {
   @override
@@ -9,27 +12,22 @@ class _AccountPageState extends State<AccountPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        alignment: Alignment.topCenter,
-        children: <Widget>[
-
-        ListView(
-          children: <Widget>[
-            Image.asset("assets/images/account/account.png"),
-            SizedBox(
-              height: 20.0,
-            ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 20.0),
-              child: 
-            
-            Image.asset("assets/images/account/account_1.png"),),
-
-          ],
-        )
-        ],
-      ),
-      
+      body: SafeArea(
+          child: Container(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                alignment: Alignment.center,
+                padding: EdgeInsets.only(top: 50.w),
+                child: SvgPicture.asset('assets/images/account_logo.svg'),
+              ),
+              SmallButton('Войти').padding(),
+            ],
+          ),
+        ),
+      )),
     );
   }
 }
