@@ -1,83 +1,200 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:kingfresh/widgets/action.dart';
-import 'package:kingfresh/widgets/main_rev.dart';
-import 'package:kingfresh/widgets/slider.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:mvc_pattern/mvc_pattern.dart';
 
-class HomePage extends StatefulWidget {
+import '../../generated/l10n.dart';
+import '../controllers/home_controller.dart';
+import '../elements/CardsCarouselWidget.dart';
+import '../elements/CaregoriesCarouselWidget.dart';
+import '../elements/DeliveryAddressBottomSheetWidget.dart';
+import '../elements/FoodsCarouselWidget.dart';
+import '../elements/GridWidget.dart';
+import '../elements/ReviewsListWidget.dart';
+import '../elements/SearchBarWidget.dart';
+import '../elements/ShoppingCartButtonWidget.dart';
+import '../repository/settings_repository.dart' as settingsRepo;
+import '../repository/user_repository.dart';
+
+class HomeWidget extends StatefulWidget {
+  final GlobalKey<ScaffoldState> parentScaffoldKey;
+
+  HomeWidget({Key key, this.parentScaffoldKey}) : super(key: key);
+
   @override
-  _HomePageState createState() => _HomePageState();
+  _HomeWidgetState createState() => _HomeWidgetState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomeWidgetState extends StateMVC<HomeWidget> {
+  HomeController _con;
+
+  _HomeWidgetState() : super(HomeController()) {
+    _con = controller;
+  }
+
   @override
   Widget build(BuildContext context) {
-    ScreenUtil.init(context, designSize: Size(400, 1), allowFontScaling: false);
     return Scaffold(
-      body: SafeArea(
-        child: Container(
-          child: SingleChildScrollView(
-            child: Column(
-              children: <Widget>[
-                Container(
-                  alignment: Alignment.center,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      SvgPicture.asset("assets/images/logo.svg"),
-                      GestureDetector(
-                        onTap: () {},
-                        child: SvgPicture.asset('assets/images/search.svg'),
-                      ),
-                    ],
+      appBar: AppBar(
+        leading: new IconButton(
+          icon: new Icon(Icons.sort, color: Theme.of(context).hintColor),
+          onPressed: () => widget.parentScaffoldKey.currentState.openDrawer(),
+        ),
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: ValueListenableBuilder(
+          valueListenable: settingsRepo.setting,
+          builder: (context, value, child) {
+            return Text(
+              value.appName ?? S.of(context).home,
+              style: Theme.of(context).textTheme.headline6.merge(TextStyle(letterSpacing: 1.3)),
+            );
+          },
+        ),
+//        title: Text(
+//          settingsRepo.setting?.value.appName ?? S.of(context).home,
+//          style: Theme.of(context).textTheme.headline6.merge(TextStyle(letterSpacing: 1.3)),
+//        ),
+        actions: <Widget>[
+          new ShoppingCartButtonWidget(iconColor: Theme.of(context).hintColor, labelColor: Theme.of(context).accentColor),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: _con.refreshHome,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 0, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: SearchBarWidget(
+                  onClickFilter: (event) {
+                    widget.parentScaffoldKey.currentState.openEndDrawer();
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 15, left: 20, right: 20),
+                child: ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.symmetric(vertical: 0),
+                  leading: Icon(
+                    Icons.stars,
+                    color: Theme.of(context).hintColor,
+                  ),
+                  trailing: IconButton(
+                    onPressed: () {
+                      if (currentUser.value.apiToken == null) {
+                        _con.requestForCurrentLocation(context);
+                      } else {
+                        var bottomSheetController = widget.parentScaffoldKey.currentState.showBottomSheet(
+                          (context) => DeliveryAddressBottomSheetWidget(scaffoldKey: widget.parentScaffoldKey),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: new BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+                          ),
+                        );
+                        bottomSheetController.closed.then((value) {
+                          _con.refreshHome();
+                        });
+                      }
+                    },
+                    icon: Icon(
+                      Icons.my_location,
+                      color: Theme.of(context).hintColor,
+                    ),
+                  ),
+                  title: Text(
+                    S.of(context).top_restaurants,
+                    style: Theme.of(context).textTheme.headline4,
+                  ),
+                  subtitle: Text(
+                    S.of(context).near_to + " " + (settingsRepo.deliveryAddress.value?.address ?? S.of(context).unknown),
+                    style: Theme.of(context).textTheme.caption,
                   ),
                 ),
-                TopSlider(),
-                SizedBox(
-                  height: 40.w,
+              ),
+              CardsCarouselWidget(restaurantsList: _con.topRestaurants, heroTag: 'home_top_restaurants'),
+              ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 20),
+                leading: Icon(
+                  Icons.trending_up,
+                  color: Theme.of(context).hintColor,
                 ),
-                OpisanieMain(),
-                OpisanieMain(),
-                OpisanieMain(),
-                OpisanieMain(),
-                SizedBox(
-                  height: 20.0,
+                title: Text(
+                  S.of(context).trending_this_week,
+                  style: Theme.of(context).textTheme.headline4,
                 ),
-                /* Container(
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      ActionMain(),
-                      ActionMain(),
-                      ActionMain(),
-                    ],
+                subtitle: Text(
+                  S.of(context).clickOnTheFoodToGetMoreDetailsAboutIt,
+                  maxLines: 2,
+                  style: Theme.of(context).textTheme.caption,
+                ),
+              ),
+              FoodsCarouselWidget(foodsList: _con.trendingFoods, heroTag: 'home_food_carousel'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.symmetric(vertical: 0),
+                  leading: Icon(
+                    Icons.category,
+                    color: Theme.of(context).hintColor,
                   ),
-                ),*/
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Image.asset("assets/images/home/popular_text.png"),
+                  title: Text(
+                    S.of(context).food_categories,
+                    style: Theme.of(context).textTheme.headline4,
+                  ),
                 ),
-                SizedBox(
-                  height: 20.0,
+              ),
+              CategoriesCarouselWidget(
+                categories: _con.categories,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+                child: ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.symmetric(vertical: 0),
+                  leading: Icon(
+                    Icons.trending_up,
+                    color: Theme.of(context).hintColor,
+                  ),
+                  title: Text(
+                    S.of(context).most_popular,
+                    style: Theme.of(context).textTheme.headline4,
+                  ),
                 ),
-                Image.asset("assets/images/home/popular_image.png"),
-                SizedBox(
-                  height: 20.0,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: GridWidget(
+                  restaurantsList: _con.popularRestaurants,
+                  heroTag: 'home_restaurants',
                 ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Image.asset("assets/images/home/action_text.png"),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.symmetric(vertical: 20),
+                  leading: Icon(
+                    Icons.recent_actors,
+                    color: Theme.of(context).hintColor,
+                  ),
+                  title: Text(
+                    S.of(context).recent_reviews,
+                    style: Theme.of(context).textTheme.headline4,
+                  ),
                 ),
-                SizedBox(
-                  height: 20.0,
-                ),
-                Container(
-                  // padding: EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Image.asset("assets/images/home/recipes.png"),
-                ),
-              ],
-            ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: ReviewsListWidget(reviewsList: _con.recentReviews),
+              ),
+            ],
           ),
         ),
       ),

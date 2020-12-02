@@ -47,34 +47,36 @@ class _MainScreenState extends State<MainScreen> {
                 icon: SvgPicture.asset("assets/images/bottomnavbar/home.svg"),
                 activeIcon: new SvgPicture.asset(
                     "assets/images/bottomnavbar/home_active.svg"),
+                // ignore: deprecated_member_use
                 title: new Text('Главная')),
-
             BottomNavigationBarItem(
               icon: SvgPicture.asset("assets/images/bottomnavbar/catalog.svg"),
               activeIcon: new SvgPicture.asset(
                   "assets/images/bottomnavbar/catalog_active.svg"),
+              // ignore: deprecated_member_use
               title: new Text('fgfg'),
             ),
             BottomNavigationBarItem(
               icon: SvgPicture.asset("assets/images/bottomnavbar/basket.svg"),
               activeIcon: new SvgPicture.asset(
                   "assets/images/bottomnavbar/basket_active.svg"),
+              // ignore: deprecated_member_use
               title: new Text('fgfg'),
             ),
             BottomNavigationBarItem(
               icon: SvgPicture.asset("assets/images/bottomnavbar/favorite.svg"),
               activeIcon: new SvgPicture.asset(
                   "assets/images/bottomnavbar/favorite_active.svg"),
+              // ignore: deprecated_member_use
               title: new Text('fgfg'),
             ),
             BottomNavigationBarItem(
               icon: SvgPicture.asset("assets/images/bottomnavbar/user.svg"),
               activeIcon: new SvgPicture.asset(
                   "assets/images/bottomnavbar/user_active.svg"),
+              // ignore: deprecated_member_use
               title: new Text('fgfg'),
             ),
-
-            //BottomNavigationBarItem(icon: Image.asset("assets/images/bottomnavbar/home.png"))
           ]),
     );
   }
